@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar.jsx";
 import { useCart, setQty, removeFromCart, clearCart } from "../data/cart.js";
 import "../Css/cart.css";
+import { getSettings } from "../Admin/settingsStore.js";
+import { placeOrder } from "../Admin/ordersStore.js";
 
 // The client's WhatsApp number: country code first, no + and no spaces. Example: 2348012345678
 const WHATSAPP = "234XXXXXXXXXX";
@@ -107,7 +109,7 @@ export default function Cart() {
     `DELIVERY DETAILS\nName: ${form.name.trim()}\nPhone: ${form.phone.trim()}\nEmail: ${form.email.trim()}\n` +
     `Address: ${form.address.trim()}, ${form.city.trim()}, ${form.state}` +
     (form.note.trim() ? `\nNote: ${form.note.trim()}` : "");
-  const wa = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`;
+  const wa = `https://wa.me/${getSettings().whatsapp}?text=${encodeURIComponent(msg)}`;
 
   // both buttons check the delivery details first
   const proceed = (kind) => {
@@ -117,7 +119,9 @@ export default function Cart() {
       return;
     }
     if (kind === "wa") {
+      placeOrder({ items: cart, customer: form, total, method: "WhatsApp" });
       window.open(wa, "_blank", "noopener");
+      clearCart();
     } else {
       // Paystack will be connected here when the backend is ready.
       alert("Online payment with Paystack will be connected soon. Please order on WhatsApp for now.");
@@ -212,7 +216,7 @@ export default function Cart() {
               </button>
 
               <ul className="ca-notes">
-                <li>Delivered in 3–4 business days across Nigeria</li>
+                <li>{getSettings().deliveryNote}</li>
                 <li>Secure checkout with Paystack</li>
                 <li>Returns &amp; exchanges — <Link to="/returns">see policy</Link></li>
               </ul>

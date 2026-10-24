@@ -2,9 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import "../css/Navbar.css";
 import { useCartCount } from "../data/cart.js";
+import { getSettings } from "../Admin/settingsStore.js";
 
 export default function Navbar() {
   const cartCount = useCartCount();
+  const st = getSettings();
   const [query, setQuery] = useState("");
   const [logoMissing, setLogoMissing] = useState(false);
   const [nameMissing, setNameMissing] = useState(false);
@@ -75,6 +77,12 @@ export default function Navbar() {
   };
 
   return (
+    <>
+    {st.announceOn && st.announceText && (
+      <div className="announce">
+        {st.announceLink ? <Link to={st.announceLink}>{st.announceText}</Link> : st.announceText}
+      </div>
+    )}
     <header className="navbar">
       <Link to="/" className="nav-brand">
         {/* LOGO: put your logo icon at public/logo.png */}
@@ -188,5 +196,6 @@ export default function Navbar() {
         </nav>
       </aside>
     </header>
+    </>
   );
 }

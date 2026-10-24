@@ -3,6 +3,7 @@ import { Link, useLocation, useParams } from "react-router-dom";
 import Navbar from "../components/Navbar.jsx";
 import { PRODUCTS, CATS } from "./Shop.jsx";
 import { addToCart } from "../data/cart.js";
+import { getSettings } from "../Admin/settingsStore.js";
 import "../Css/product.css";
 
 // The client's WhatsApp number: country code first, no + and no spaces. Example: 2348012345678
@@ -222,7 +223,7 @@ function ProductPage() {
   const toggle = (k) => setOpenAcc((cur) => (cur === k ? "" : k));
 
   const msg = `Hi, I want to order: ${product.name}${color ? ` (${color})` : ""}${size ? ` (Size ${size})` : ""} - ₦${product.price.toLocaleString()}\n${window.location.href}`;
-  const wa = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`;
+  const wa = `https://wa.me/${getSettings().whatsapp}?text=${encodeURIComponent(msg)}`;
 
   return (
     <>
@@ -343,7 +344,7 @@ function ProductPage() {
                   <circle cx="6" cy="18" r="2" />
                   <circle cx="17" cy="18" r="2" />
                 </Icon>
-                Delivered in 3–4 business days across Nigeria
+                {getSettings().deliveryNote}
               </li>
               <li>
                 <Icon>
