@@ -1,0 +1,91 @@
+html, body { margin: 0; background: #0a0a0e; }
+html[data-theme="light"], html[data-theme="light"] body { background: #f5f5f7; }
+
+.ct-page {
+  --bg: #0a0a0e;
+  --fg: #ffffff;
+  --mute: #9a9aa5;
+  --chip: #15151b;
+  min-height: 100vh;
+  padding: 40px 38px 70px;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+html[data-theme="light"] .ct-page {
+  --bg: #f5f5f7;
+  --fg: #111111;
+  --mute: #666670;
+  --chip: #ffffff;
+}
+
+.ct-page h1 {
+  margin: 0 0 14px;
+  font-size: clamp(1.9rem, 3.6vw, 2.8rem);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.ct-page > p {
+  margin: 0 0 48px;
+  color: var(--mute);
+  font-size: 1.25rem;
+}
+
+.ct-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 36px 36px;
+}
+
+.ct-tile {
+  position: relative;
+  display: block;
+  aspect-ratio: 4 / 5;
+  border-radius: 12px;
+  overflow: hidden;
+  text-decoration: none;
+  color: #fff;
+  background: radial-gradient(circle at 70% 20%, rgba(214, 160, 0, 0.25), transparent 60%), var(--chip);
+}
+.ct-tile img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+.ct-tile:hover img { transform: scale(1.05); }
+.ct-shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 45%, rgba(0, 0, 0, 0.78) 100%);
+}
+.ct-info {
+  position: absolute;
+  left: 22px;
+  right: 14px;
+  bottom: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ct-info b {
+  font-size: 1.7rem;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+}
+.ct-info span { font-size: 1rem; font-weight: 600; color: #d6d6dc; }
+
+@media (max-width: 1400px) { .ct-grid { grid-template-columns: repeat(4, 1fr); } }
+@media (max-width: 1000px) { .ct-grid { grid-template-columns: repeat(3, 1fr); gap: 24px; } }
+@media (max-width: 700px) {
+  .ct-page { padding: 28px 14px 48px; }
+  .ct-page > p { margin-bottom: 28px; font-size: 1rem; }
+  .ct-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  .ct-info { left: 14px; bottom: 14px; }
+  .ct-info b { font-size: 1.25rem; }
+  .ct-info span { font-size: 0.85rem; }
+}

@@ -1,0 +1,163 @@
+html, body { margin: 0; background: #0a0a0e; }
+html[data-theme="light"], html[data-theme="light"] body { background: #f5f5f7; }
+
+.shop {
+  --bg: #0a0a0e;
+  --fg: #ffffff;
+  --mute: #9a9aa5;
+  --line: #25252c;
+  --chip: #15151b;
+  display: grid;
+  grid-template-columns: 270px 1fr;
+  gap: 40px;
+  min-height: 100vh;
+  padding: 36px 34px 60px;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+html[data-theme="light"] .shop {
+  --bg: #f5f5f7;
+  --fg: #111111;
+  --mute: #666670;
+  --line: #e0e0e6;
+  --chip: #ffffff;
+}
+
+/* sidebar */
+.sh-side {
+  position: sticky;
+  top: 96px;
+  align-self: start;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+  padding-right: 18px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+.sh-group { margin-bottom: 38px; }
+.sh-group h4 {
+  margin: 0 0 20px;
+  color: var(--mute);
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+}
+.sh-group button {
+  display: block;
+  margin: 0 0 14px;
+  padding: 0 0 3px;
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--mute);
+  font: inherit;
+  font-size: 1.15rem;
+  text-align: left;
+  cursor: pointer;
+}
+.sh-group button:hover { color: var(--fg); }
+.sh-group button.on {
+  color: var(--fg);
+  font-weight: 700;
+  border-bottom-color: #ffd60a;
+}
+
+/* main */
+.sh-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 36px;
+}
+.sh-head h1 {
+  margin: 0;
+  font-size: clamp(2rem, 4.6vw, 3.6rem);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+.sh-head span { padding-bottom: 6px; color: var(--mute); font-size: 1.15rem; white-space: nowrap; }
+.sh-empty { color: var(--mute); font-size: 1.1rem; }
+
+.sh-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 36px 36px;
+}
+.sh-card { display: block; text-decoration: none; color: var(--fg); }
+.sh-img {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  border-radius: 12px;
+  overflow: hidden;
+  background: radial-gradient(circle at 70% 20%, rgba(214, 160, 0, 0.25), transparent 60%), var(--chip);
+}
+.sh-img img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+.sh-card:hover .sh-img img { transform: scale(1.04); }
+.sh-card.sold .sh-img img { filter: grayscale(1) brightness(0.8); }
+.sh-sold {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 2;
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: #000;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+.sh-card h3 { margin: 16px 0 6px; font-size: 1.1rem; font-weight: 500; line-height: 1.35; }
+.sh-card b { display: block; font-size: 1.15rem; font-weight: 800; }
+.sh-colors { display: flex; align-items: center; gap: 10px; margin-top: 10px; color: var(--mute); font-size: 0.95rem; }
+.sh-dots { display: inline-flex; }
+.sh-dots i {
+  width: 20px;
+  height: 20px;
+  margin-left: -6px;
+  border-radius: 50%;
+  border: 2px solid var(--bg);
+}
+.sh-dots i:first-child { margin-left: 0; }
+
+.sh-more { display: flex; justify-content: center; margin-top: 48px; }
+.sh-more button {
+  padding: 14px 34px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--chip);
+  color: var(--fg);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.sh-more button:hover { border-color: #ffd60a; }
+
+@media (max-width: 1200px) { .sh-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 900px) {
+  .shop { grid-template-columns: 1fr; gap: 24px; padding: 24px 14px 48px; }
+  .sh-side { position: static; max-height: none; padding-right: 0; overflow: visible; }
+  .sh-group { margin-bottom: 22px; }
+  .sh-group h4 { margin-bottom: 12px; }
+  .sh-group button {
+    display: inline-block;
+    margin: 0 8px 8px 0;
+    padding: 8px 14px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    font-size: 0.95rem;
+  }
+  .sh-group button.on { border-color: #ffd60a; }
+  .sh-grid { gap: 22px 14px; }
+  .sh-card h3 { font-size: 0.95rem; }
+  .sh-card b { font-size: 1rem; }
+}
