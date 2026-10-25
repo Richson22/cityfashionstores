@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import "../css/Navbar.css";
+import "../Css/Navbar.css";
 import { useCartCount } from "../data/cart.js";
 import { getSettings } from "../Admin/settingsStore.js";
 import BottomNav from "./BottomNav.jsx";
