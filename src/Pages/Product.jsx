@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import Navbar from "../components/Navbar.jsx";
-import { PRODUCTS, CATS } from "./Shop.jsx";
+import { useCatalog } from "../data/catalog.js";
 import { addToCart } from "../data/cart.js";
-import { getSettings } from "../Admin/settingsStore.js";
+import { useSettings } from "../data/settings.js";
 import "../Css/product.css";
 
 // The client's WhatsApp number: country code first, no + and no spaces. Example: 2348012345678
@@ -133,6 +133,8 @@ function Acc({ title, open, onToggle, children }) {
 function ProductPage() {
   const { id } = useParams();
   const { state } = useLocation();
+  const { products: PRODUCTS, categories: CATS } = useCatalog();
+  const settings = useSettings();
   const [size, setSize] = useState("");
   const [color, setColor] = useState("");
   const [tried, setTried] = useState(false);
@@ -174,7 +176,7 @@ function ProductPage() {
     ? SHOES
     : CLOTHES;
   const catName = (CATS.find((c) => c.slug === product.category) || {}).name;
-  const colorOpts = (product.colors || []).map(toColor);
+  const colorOpts = (product.colorOptions || product.colors || []).map(toColor);
   const pickColor = (n) => {
     setColor(n);
     setTried(false);
@@ -223,7 +225,7 @@ function ProductPage() {
   const toggle = (k) => setOpenAcc((cur) => (cur === k ? "" : k));
 
   const msg = `Hi, I want to order: ${product.name}${color ? ` (${color})` : ""}${size ? ` (Size ${size})` : ""} - ₦${product.price.toLocaleString()}\n${window.location.href}`;
-  const wa = `https://wa.me/${getSettings().whatsapp}?text=${encodeURIComponent(msg)}`;
+  const wa = `https://wa.me/${settings.whatsapp}?text=${encodeURIComponent(msg)}`;
 
   return (
     <>
@@ -253,7 +255,7 @@ function ProductPage() {
               <div className="pd-thumbs">
                 {gallery.map((g, i) => (
                   <Thumb
-                    key={g}
+                    key={i}
                     src={g}
                     on={i === active}
                     onPick={() => {
@@ -277,10 +279,10 @@ function ProductPage() {
                     <b>Color</b> {color || "Select"}
                   </span>
                 </div>
-                <div className="pd-swatches">
-                  {colorOpts.map((c) => (
+                                <div className="pd-swatches">
+                  {colorOpts.map((c, i) => (
                     <button
-                      key={c.hex}
+                      key={c.name + "-" + i}
                       type="button"
                       title={c.name}
                       aria-label={c.name}
@@ -344,7 +346,7 @@ function ProductPage() {
                   <circle cx="6" cy="18" r="2" />
                   <circle cx="17" cy="18" r="2" />
                 </Icon>
-                {getSettings().deliveryNote}
+                {settings.deliveryNote}
               </li>
               <li>
                 <Icon>

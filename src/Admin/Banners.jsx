@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { loadBanners, saveBanners } from "./bannersStore.js";
-import { loadCategories } from "./categoriesStore.js";
+import { loadBanners } from "./bannersStore.js";
+import { api } from "../data/api.js";
 import { shrink } from "./image.js";
 
 function Pic({ src, className }) {
@@ -30,7 +30,7 @@ function Switch({ on, onChange, label }) {
 const lines = (b) => (b.title || []).filter(Boolean);
 
 /* ---------- add / edit panel ---------- */
-function BannerForm({ initial, onSave, onClose }) {
+function BannerForm({ initial, categories, onSave, onClose }) {
   const [f, setF] = useState(() => ({
     tag: initial ? initial.tag || "" : "",
     l1: initial ? initial.title[0] || "" : "",
@@ -59,11 +59,7 @@ function BannerForm({ initial, onSave, onClose }) {
   if (!f.link.trim()) errs.link = "Enter where the button goes";
   const e = tried ? errs : {};
 
-  const links = [
-    "/shop",
-    "/categories",
-    ...loadCategories().map((c) => `/shop?category=${c.slug}`),
-  ];
+  const links = ["/shop", "/categories", ...categories.map((c) => `/shop?category=${c.slug}`)];
 
   const pick = async (ev) => {
     const file = ev.target.files[0];
@@ -186,38 +182,109 @@ function BannerForm({ initial, onSave, onClose }) {
 }
 
 /* ---------- the page ---------- */
+const FIELDS = ["tag", "title", "text", "button", "link", "image", "active"];
+const pickFields = (b) => Object.fromEntries(FIELDS.map((k) => [k, b[k]]));
+
 export default function Banners() {
-  const [list, setList] = useState(loadBanners);
+  const [list, setList] = useState(null);
+  const [categories, setCategories] = useState([]);
+  const [error, setError] = useState("");
   const [editing, setEditing] = useState(null); // null | "new" | banner
+  const [busy, setBusy] = useState(false);
 
-  const commit = (next) => {
-    setList(next);
-    if (!saveBanners(next)) {
-      alert("The browser could not save this (storage is full). Try a smaller photo.");
+  const load = async () => {
+    try {
+      const [banners, cats] = await Promise.all([
+        api("/banners/all", { auth: true }),
+        api("/categories/all", { auth: true }),
+      ]);
+      setList(banners);
+      setCategories(cats);
+      setError("");
+    } catch (e) {
+      setError(e.message === "Failed to fetch" ? "Cannot reach the server. Is the backend running?" : e.message);
     }
   };
 
-  const save = (data) => {
-    if (data.id) {
-      commit(list.map((b) => (b.id === data.id ? data : b)));
-    } else {
-      const id = list.reduce((m, b) => Math.max(m, b.id), 0) + 1;
-      commit([...list, { ...data, id }]);
+  useEffect(() => {
+    load();
+  }, []);
+
+  const save = async (data) => {
+    try {
+      const body = pickFields(data);
+      if (data.id) await api(`/banners/${data.id}`, { method: "PUT", auth: true, body });
+      else await api("/banners", { method: "POST", auth: true, body: { ...body, order: list.length } });
+      setEditing(null);
+      await load();
+    } catch (e) {
+      alert(e.message);
     }
-    setEditing(null);
   };
 
-  const remove = (b) => {
-    if (window.confirm("Delete this banner?")) commit(list.filter((x) => x.id !== b.id));
+  const toggle = async (b, active) => {
+    setList(list.map((x) => (x.id === b.id ? { ...x, active } : x)));
+    try {
+      await api(`/banners/${b.id}`, { method: "PUT", auth: true, body: { active } });
+    } catch (e) {
+      alert(e.message);
+      load();
+    }
   };
 
-  const move = (i, dir) => {
+  const remove = async (b) => {
+    if (!window.confirm("Delete this banner?")) return;
+    try {
+      await api(`/banners/${b.id}`, { method: "DELETE", auth: true });
+      await load();
+    } catch (e) {
+      alert(e.message);
+    }
+  };
+
+  const move = async (i, dir) => {
     const j = i + dir;
     if (j < 0 || j >= list.length) return;
     const next = [...list];
     [next[i], next[j]] = [next[j], next[i]];
-    commit(next);
+    const withOrder = next.map((b, idx) => ({ ...b, order: idx }));
+    const changed = withOrder.filter((b, idx) => list[idx].id !== b.id || list[idx].order !== idx);
+    setList(withOrder);
+    try {
+      await Promise.all(
+        changed.map((b) => api(`/banners/${b.id}`, { method: "PUT", auth: true, body: { order: b.order } }))
+      );
+    } catch (e) {
+      alert(e.message);
+      load();
+    }
   };
+
+  // copies the 4 slides that were showing before into the database
+  const addStarters = async () => {
+    setBusy(true);
+    try {
+      const starters = loadBanners();
+      for (let i = 0; i < starters.length; i++) {
+        await api("/banners", { method: "POST", auth: true, body: { ...pickFields(starters[i]), order: i } });
+      }
+      await load();
+    } catch (e) {
+      alert(e.message);
+    }
+    setBusy(false);
+  };
+
+  if (error) {
+    return (
+      <>
+        <div className="ov-head"><div><h2>Banners</h2></div></div>
+        <p className="al-error">{error}</p>
+        <button type="button" className="ad-btn ghost" onClick={load}>Try again</button>
+      </>
+    );
+  }
+  if (!list) return <p>Loading…</p>;
 
   const activeCount = list.filter((b) => b.active).length;
 
@@ -248,7 +315,7 @@ export default function Banners() {
             <div className="bnr-act">
               <div className="bnr-on">
                 <span>{b.active ? "Showing" : "Hidden"}</span>
-                <Switch on={b.active} onChange={(v) => commit(list.map((x) => (x.id === b.id ? { ...x, active: v } : x)))} label="Showing" />
+                <Switch on={b.active} onChange={(v) => toggle(b, v)} label="Showing" />
               </div>
               <div className="bnr-btns">
                 <button type="button" disabled={i === 0} onClick={() => move(i, -1)} aria-label="Move up">↑</button>
@@ -259,12 +326,20 @@ export default function Banners() {
             </div>
           </div>
         ))}
-        {list.length === 0 && <p className="pr-empty">No banners yet. Add your first one.</p>}
+        {list.length === 0 && (
+          <div>
+            <p className="pr-empty">No banners yet. The home page is showing its built-in slides.</p>
+            <button type="button" className="ad-btn ghost" onClick={addStarters} disabled={busy}>
+              {busy ? "Adding…" : "Add the 4 starter slides"}
+            </button>
+          </div>
+        )}
       </div>
 
       {editing && (
         <BannerForm
           initial={editing === "new" ? null : editing}
+          categories={categories}
           onSave={save}
           onClose={() => setEditing(null)}
         />

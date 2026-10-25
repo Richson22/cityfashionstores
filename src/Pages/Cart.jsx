@@ -1,13 +1,10 @@
-import { useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar.jsx";
 import { useCart, setQty, removeFromCart, clearCart } from "../data/cart.js";
-import "../Css/cart.css";
+import { api } from "../data/api.js";
 import { getSettings } from "../Admin/settingsStore.js";
-import { placeOrder } from "../Admin/ordersStore.js";
-
-// The client's WhatsApp number: country code first, no + and no spaces. Example: 2348012345678
-const WHATSAPP = "234XXXXXXXXXX";
+import "../Css/cart.css";
 
 const STATES = [
   "Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue", "Borno", "Cross River",
@@ -85,12 +82,22 @@ function Field({ label, error, wide, children }) {
 
 export default function Cart() {
   const cart = useCart();
+  const navigate = useNavigate();
   const count = cart.reduce((n, i) => n + i.qty, 0);
   const total = cart.reduce((n, i) => n + i.price * i.qty, 0);
 
   const [form, setForm] = useState(loadForm);
   const [tried, setTried] = useState(false);
   const formRef = useRef(null);
+    const [busy, setBusy] = useState(false);
+  const [settings, setSettings] = useState(getSettings);
+  useEffect(() => {
+    api("/settings")
+      .then((s) => {
+        if (s && Object.keys(s).length) setSettings((p) => ({ ...p, ...s }));
+      })
+      .catch(() => {});
+  }, []);
   const errors = tried ? validate(form) : {};
 
   const set = (key) => (e) => {
@@ -102,31 +109,53 @@ export default function Cart() {
   };
 
   const lines = cart
-    .map((i) => `• ${i.name}${i.color ? ` (${i.color})` : ""}${i.size ? ` (Size ${i.size})` : ""} x${i.qty} - ₦${(i.price * i.qty).toLocaleString()}`)
+    .map(
+      (i) =>
+        `• ${i.name}${i.color ? ` (${i.color})` : ""}${i.size ? ` (Size ${i.size})` : ""} x${i.qty} - ₦${(i.price * i.qty).toLocaleString()}`
+    )
     .join("\n");
   const msg =
     `Hi, I want to order:\n${lines}\n\nTotal: ₦${total.toLocaleString()}\n\n` +
     `DELIVERY DETAILS\nName: ${form.name.trim()}\nPhone: ${form.phone.trim()}\nEmail: ${form.email.trim()}\n` +
     `Address: ${form.address.trim()}, ${form.city.trim()}, ${form.state}` +
     (form.note.trim() ? `\nNote: ${form.note.trim()}` : "");
-  const wa = `https://wa.me/${getSettings().whatsapp}?text=${encodeURIComponent(msg)}`;
 
-  // both buttons check the delivery details first
-  const proceed = (kind) => {
+    const proceed = async (kind) => {
     setTried(true);
     if (Object.keys(validate(form)).length) {
       if (formRef.current) formRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
     if (kind === "wa") {
-      placeOrder({ items: cart, customer: form, total, method: "WhatsApp" });
-      window.open(wa, "_blank", "noopener");
-      clearCart();
+      if (busy) return;
+      setBusy(true);
+      // open the tab now, so the phone does not block it after the wait
+      const w = window.open("", "_blank");
+      try {
+        const order = await api("/orders", {
+          method: "POST",
+          body: {
+            items: cart.map((i) => ({ id: i.id, qty: i.qty, size: i.size || "", color: i.color || "" })),
+            customer: form,
+            method: "WhatsApp",
+          },
+        });
+        const link = `https://wa.me/${settings.whatsapp}?text=${encodeURIComponent(`Order #${order.no}\n\n${msg}`)}`;
+        if (w) w.location.href = link;
+        else window.location.href = link;
+        clearCart();
+        navigate(`/order-success/${order.no}`, { state: { order } });
+      } catch (e) {
+        if (w) w.close();
+        alert(e.message === "Failed to fetch" ? "Cannot reach the server. Please try again." : e.message);
+      }
+      setBusy(false);
     } else {
-      // Paystack will be connected here when the backend is ready.
+      // Paystack will be connected here later.
       alert("Online payment with Paystack will be connected soon. Please order on WhatsApp for now.");
     }
   };
+  
 
   return (
     <>
@@ -175,7 +204,7 @@ export default function Cart() {
                       ))}
                     </select>
                   </Field>
-                  <Field label="Closest Motor Park" error={errors.city}>
+                  <Field label="City / Area" error={errors.city}>
                     <input type="text" value={form.city} onChange={set("city")} autoComplete="address-level2" placeholder="e.g. Ikeja" />
                   </Field>
                   <Field label="Full delivery address" error={errors.address} wide>

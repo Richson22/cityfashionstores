@@ -2,11 +2,12 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar.jsx";
 import "../Css/categories.css";
+import { useCatalog } from "../data/catalog.js";
 
 // DEMO DATA for the client preview.
 // Photos go in public/categories/ (same folder as the home page tiles).
 // Later this list will come from the admin / backend (name, slug, image, count).
-const categories = [
+const demoCategories = [
   { name: "Armless", slug: "armless", image: "/categories/armless.jpg", count: 22 },
   { name: "Bags", slug: "bags", image: "/categories/bags.jpg", count: 37 },
   { name: "Belts", slug: "belts", image: "/categories/belts.jpg", count: 65 },
@@ -43,6 +44,7 @@ function Tile({ cat }) {
 }
 
 export default function Categories() {
+  const { categories } = useCatalog();
   return (
     <>
       <Navbar />

@@ -4,6 +4,9 @@ import Shop from './Pages/Shop.jsx'
 import Categories from './Pages/Categories.jsx'
 import Product from './Pages/Product.jsx'
 import Cart from './Pages/Cart.jsx'
+import Track from './Pages/Track.jsx'
+import OrderSuccess from './Pages/OrderSuccess.jsx'
+import Returns from './Pages/Returns.jsx'
 import AdminLogin from './Admin/AdminLogin.jsx'
 import Loader from './components/Loader.jsx'
 import RequireAdmin from './Admin/RequireAdmin.jsx'
@@ -26,6 +29,9 @@ function App() {
         <Route path="/categories" element={<Categories />} />
         <Route path="/product/:id" element={<Product />} />
         <Route path="/cart" element={<Cart />} />
+        <Route path="/track" element={<Track />} />
+        <Route path="/returns" element={<Returns />} />
+        <Route path="/order-success/:no" element={<OrderSuccess />} />
 
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route

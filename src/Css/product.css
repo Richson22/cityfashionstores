@@ -37,18 +37,21 @@ html[data-theme="light"] .pd {
 
 .pd-grid {
   display: grid;
-  grid-template-columns: 1.25fr 1fr;
-  gap: 90px;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
   align-items: start;
 }
 
 .pd-photo {
   position: relative;
   aspect-ratio: 4 / 5;
+  max-height: 78vh;
+  width: 100%;
   border-radius: 14px;
   overflow: hidden;
-  background: radial-gradient(circle at 70% 20%, rgba(214, 160, 0, 0.25), transparent 60%), var(--chip);
+  background: var(--chip);
 }
+.pd-photo img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .pd-photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .pd-sold {
   position: absolute;
@@ -168,7 +171,7 @@ html[data-theme="light"] .pd {
 }
 
 /* thumbnails under the big photo */
-.pd-thumbs { display: flex; gap: 12px; margin-top: 16px; }
+.pd-thumbs { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 16px; }
 .pd-thumb {
   width: 120px;
   height: 150px;
@@ -179,7 +182,7 @@ html[data-theme="light"] .pd {
   background: var(--chip);
   cursor: pointer;
 }
-.pd-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.pd-thumb img { display: block; width: 100%; height: 100%; object-fit: contain; background: var(--chip); }
 .pd-thumb.on { border-color: var(--fg); }
 
 /* the Size guide link is now a button */

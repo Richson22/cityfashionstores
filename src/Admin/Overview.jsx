@@ -1,68 +1,61 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { api } from "../data/api.js";
 
-// DEMO NUMBERS: they become real when the backend is connected.
-const money = (n) => `₦${n.toLocaleString()}`;
-const short = (n) => (n >= 1000000 ? `${(n / 1000000).toFixed(1)}m` : `${Math.round(n / 1000)}k`);
-
-const STATS = [
-  { label: "Revenue this month", value: money(2845000), note: "+12% compared to last month" },
-  { label: "Orders this month", value: "126", note: "14 waiting to be processed" },
-  { label: "Active products", value: "1,838", note: "42 sold out" },
-  { label: "Low stock", value: "9", note: "products with 3 or fewer left" },
-];
-
-const SALES = [
-  { d: "Mon", v: 185000 },
-  { d: "Tue", v: 242000 },
-  { d: "Wed", v: 131000 },
-  { d: "Thu", v: 318000 },
-  { d: "Fri", v: 402000 },
-  { d: "Sat", v: 469000 },
-  { d: "Sun", v: 276000 },
-];
-
-const STATUS = [
-  { label: "Pending", n: 14 },
-  { label: "Paid", n: 31 },
-  { label: "Shipped", n: 22 },
-  { label: "Delivered", n: 59 },
-];
-
-const ORDERS = [
-  { no: "#1042", who: "Chinedu Okafor", items: 2, total: 45500, status: "Pending", when: "Today, 10:42" },
-  { no: "#1041", who: "Amaka Eze", items: 1, total: 23400, status: "Paid", when: "Today, 09:15" },
-  { no: "#1040", who: "Tunde Bello", items: 3, total: 68900, status: "Shipped", when: "Yesterday" },
-  { no: "#1039", who: "Ngozi Umeh", items: 1, total: 14300, status: "Delivered", when: "Yesterday" },
-  { no: "#1038", who: "Ibrahim Musa", items: 2, total: 52000, status: "Delivered", when: "2 days ago" },
-  { no: "#1037", who: "Folake Adeyemi", items: 1, total: 22100, status: "Paid", when: "2 days ago" },
-];
-
-const LOW = [
-  { name: "Scott Made It Polo Shirt", left: 1 },
-  { name: "Tan Baggy Jeans", left: 2 },
-  { name: "Olive Bomber Jacket", left: 2 },
-  { name: "Retro Football Jersey", left: 3 },
-  { name: "Pulafit Men's Boxer", left: 3 },
-];
+const money = (n) => `₦${(n || 0).toLocaleString()}`;
+const short = (n) => (n >= 1000000 ? `${(n / 1000000).toFixed(1)}m` : n >= 1000 ? `${Math.round(n / 1000)}k` : `${n}`);
+const when = (d) =>
+  new Date(d).toLocaleString("en-NG", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 
 export default function Overview() {
+  const [data, setData] = useState(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    api("/admin/stats", { auth: true })
+      .then(setData)
+      .catch((e) => setError(e.message === "Failed to fetch" ? "Cannot reach the server. Is the backend running?" : e.message));
+  }, []);
+
   const today = new Date().toLocaleDateString("en-NG", { weekday: "long", day: "numeric", month: "long" });
-  const max = Math.max(...SALES.map((s) => s.v));
-  const week = SALES.reduce((n, s) => n + s.v, 0);
-  const totalOrders = STATUS.reduce((n, s) => n + s.n, 0);
+
+  const head = (
+    <div className="ov-head">
+      <div>
+        <h2>Welcome back 👋</h2>
+        <p>{today} · here is what is happening in your store</p>
+      </div>
+      <div className="ov-actions">
+        <Link to="/admin/products" className="ad-btn">+ Add product</Link>
+        <Link to="/admin/categories" className="ad-btn ghost">+ Add category</Link>
+      </div>
+    </div>
+  );
+
+  if (error) return <>{head}<p className="al-error">{error}</p></>;
+  if (!data) return <>{head}<p>Loading…</p></>;
+
+  const { sales, status, recent, low } = data;
+  const max = Math.max(1, ...sales.map((s) => s.v));
+  const week = sales.reduce((n, s) => n + s.v, 0);
+  const totalOrders = status.reduce((n, s) => n + s.n, 0);
+
+  let change = "No sales last month yet";
+  if (data.revenuePrev > 0) {
+    const pct = Math.round(((data.revenueMonth - data.revenuePrev) / data.revenuePrev) * 100);
+    change = `${pct >= 0 ? "+" : ""}${pct}% compared to last month`;
+  }
+
+  const STATS = [
+    { label: "Revenue this month", value: money(data.revenueMonth), note: change },
+    { label: "Orders this month", value: String(data.ordersMonth), note: `${data.pending} waiting to be processed` },
+    { label: "Active products", value: String(data.activeProducts), note: `${data.soldOut} sold out` },
+    { label: "Low stock", value: String(data.lowCount), note: "products with 3 or fewer left" },
+  ];
 
   return (
     <>
-      <div className="ov-head">
-        <div>
-          <h2>Welcome back 👋</h2>
-          <p>{today} · here is what is happening in your store</p>
-        </div>
-        <div className="ov-actions">
-          <Link to="/admin/products" className="ad-btn">+ Add product</Link>
-          <Link to="/admin/categories" className="ad-btn ghost">+ Add category</Link>
-        </div>
-      </div>
+      {head}
 
       <div className="ov-stats">
         {STATS.map((s) => (
@@ -81,8 +74,8 @@ export default function Overview() {
             <b>{money(week)}</b>
           </div>
           <div className="ov-chart">
-            {SALES.map((s) => (
-              <div className="ov-bar" key={s.d} title={`${s.d}: ${money(s.v)}`}>
+            {sales.map((s, i) => (
+              <div className="ov-bar" key={i} title={`${s.d}: ${money(s.v)}`}>
                 <em>{short(s.v)}</em>
                 <i style={{ height: `${Math.max(6, (s.v / max) * 100)}%` }} />
                 <span>{s.d}</span>
@@ -97,14 +90,14 @@ export default function Overview() {
             <b>{totalOrders} total</b>
           </div>
           <ul className="ov-status">
-            {STATUS.map((s) => (
+            {status.map((s) => (
               <li key={s.label}>
                 <div>
                   <span>{s.label}</span>
                   <b>{s.n}</b>
                 </div>
                 <div className="ov-track">
-                  <i style={{ width: `${(s.n / totalOrders) * 100}%` }} />
+                  <i style={{ width: `${totalOrders ? (s.n / totalOrders) * 100 : 0}%` }} />
                 </div>
               </li>
             ))}
@@ -118,32 +111,36 @@ export default function Overview() {
             <h3>Recent orders</h3>
             <Link to="/admin/orders">View all →</Link>
           </div>
-          <div className="ov-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>Order</th>
-                  <th>Customer</th>
-                  <th>Items</th>
-                  <th>Total</th>
-                  <th>Status</th>
-                  <th>Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {ORDERS.map((o) => (
-                  <tr key={o.no}>
-                    <td><b>{o.no}</b></td>
-                    <td>{o.who}</td>
-                    <td>{o.items}</td>
-                    <td>{money(o.total)}</td>
-                    <td><span className={`ad-badge ${o.status.toLowerCase()}`}>{o.status}</span></td>
-                    <td className="mute">{o.when}</td>
+          {recent.length === 0 ? (
+            <p>No orders yet.</p>
+          ) : (
+            <div className="ov-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Order</th>
+                    <th>Customer</th>
+                    <th>Items</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th>Date</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {recent.map((o) => (
+                    <tr key={o.no}>
+                      <td><b>#{o.no}</b></td>
+                      <td>{o.who}</td>
+                      <td>{o.items}</td>
+                      <td>{money(o.total)}</td>
+                      <td><span className={`ad-badge ${o.status.toLowerCase()}`}>{o.status}</span></td>
+                      <td className="mute">{when(o.createdAt)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </section>
 
         <section className="ov-card">
@@ -151,14 +148,18 @@ export default function Overview() {
             <h3>Running low</h3>
             <Link to="/admin/products">Manage →</Link>
           </div>
-          <ul className="ov-low">
-            {LOW.map((p) => (
-              <li key={p.name}>
-                <span>{p.name}</span>
-                <b className={p.left <= 1 ? "red" : ""}>{p.left} left</b>
-              </li>
-            ))}
-          </ul>
+          {low.length === 0 ? (
+            <p>Nothing is running low.</p>
+          ) : (
+            <ul className="ov-low">
+              {low.map((p) => (
+                <li key={p.name}>
+                  <span>{p.name}</span>
+                  <b className={p.left <= 1 ? "red" : ""}>{p.left} left</b>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
       </div>
     </>

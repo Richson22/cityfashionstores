@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import Navbar from "../components/Navbar.jsx";
 import "../Css/shop.css";
+import { useCatalog } from "../data/catalog.js";
 
 // DEMO DATA for the client preview.
 // Later this list will come from the admin / backend (same fields).
@@ -78,6 +79,8 @@ function ShopCard({ p }) {
 }
 
 export default function Shop() {
+  // products and categories now come from the admin
+  const { categories: CATS, products: PRODUCTS } = useCatalog();
   const [params, setParams] = useSearchParams();
   const category = params.get("category") || "all";
   const search = (params.get("search") || "").trim().toLowerCase();

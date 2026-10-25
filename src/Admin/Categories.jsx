@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { loadCategories, saveCategories, slugify } from "./categoriesStore.js";
-import { loadProducts } from "./productsStore.js";
+import { slugify } from "./categoriesStore.js";
+import { api } from "../data/api.js";
 import { shrink } from "./image.js";
 
 function Pic({ src, className }) {
@@ -102,48 +102,89 @@ function CatForm({ initial, existing, onSave, onClose }) {
 
 /* ---------- the page ---------- */
 export default function Categories() {
-  const [list, setList] = useState(loadCategories);
+  const [list, setList] = useState(null);
+  const [counts, setCounts] = useState({});
   const [editing, setEditing] = useState(null); // null | "new" | category
-  const counts = {};
-  loadProducts().forEach((p) => {
-    counts[p.category] = (counts[p.category] || 0) + 1;
-  });
+  const [error, setError] = useState("");
 
-  const commit = (next) => {
-    setList(next);
-    if (!saveCategories(next)) {
-      alert("The browser could not save this (storage is full). Try a smaller photo.");
+  const load = async () => {
+    try {
+      const [cats, prods] = await Promise.all([
+        api("/categories/all", { auth: true }),
+        api("/products/all", { auth: true }),
+      ]);
+      const c = {};
+      prods.forEach((p) => {
+        c[p.category] = (c[p.category] || 0) + 1;
+      });
+      setCounts(c);
+      setList(cats);
+      setError("");
+    } catch (e) {
+      setError(e.message === "Failed to fetch" ? "Cannot reach the server. Is the backend running?" : e.message);
     }
   };
 
-  const save = (data) => {
-    if (data.id) {
-      commit(list.map((c) => (c.id === data.id ? data : c)));
-    } else {
-      const id = list.reduce((m, c) => Math.max(m, c.id), 0) + 1;
-      commit([...list, { ...data, id }]);
+  useEffect(() => {
+    load();
+  }, []);
+
+  const save = async (data) => {
+    try {
+      const body = { name: data.name, slug: data.slug, image: data.image };
+      if (data.id) await api(`/categories/${data.id}`, { method: "PUT", auth: true, body });
+      else await api("/categories", { method: "POST", auth: true, body: { ...body, order: list.length } });
+      setEditing(null);
+      await load();
+    } catch (e) {
+      alert(e.message);
     }
-    setEditing(null);
   };
 
-  const remove = (c) => {
+  const remove = async (c) => {
     const n = counts[c.slug] || 0;
     if (n > 0) {
       alert(`"${c.name}" still has ${n} product${n === 1 ? "" : "s"}. Move or delete them first.`);
       return;
     }
-    if (window.confirm(`Delete the category "${c.name}"?`)) {
-      commit(list.filter((x) => x.id !== c.id));
+    if (!window.confirm(`Delete the category "${c.name}"?`)) return;
+    try {
+      await api(`/categories/${c.id}`, { method: "DELETE", auth: true });
+      await load();
+    } catch (e) {
+      alert(e.message);
     }
   };
 
-  const move = (i, dir) => {
+  const move = async (i, dir) => {
     const j = i + dir;
     if (j < 0 || j >= list.length) return;
     const next = [...list];
     [next[i], next[j]] = [next[j], next[i]];
-    commit(next);
+    const withOrder = next.map((c, idx) => ({ ...c, order: idx }));
+    setList(withOrder);
+    try {
+      await Promise.all(
+        withOrder
+          .filter((c, idx) => list[idx].id !== c.id || list[idx].order !== idx)
+          .map((c) => api(`/categories/${c.id}`, { method: "PUT", auth: true, body: { order: c.order } }))
+      );
+    } catch (e) {
+      alert(e.message);
+      load();
+    }
   };
+
+  if (error) {
+    return (
+      <>
+        <div className="ov-head"><div><h2>Categories</h2></div></div>
+        <p className="al-error">{error}</p>
+        <button type="button" className="ad-btn ghost" onClick={load}>Try again</button>
+      </>
+    );
+  }
+  if (!list) return <p>Loading…</p>;
 
   return (
     <>

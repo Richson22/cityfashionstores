@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { STATUSES, loadOrders, saveOrders } from "./ordersStore.js";
+import { STATUSES } from "./ordersStore.js";
+import { api } from "../data/api.js";
 
 const PAGE = 10;
 const money = (n) => `₦${Number(n).toLocaleString()}`;
@@ -122,26 +123,58 @@ function Detail({ order, onStatus, onDelete, onClose }) {
 
 /* ---------- the page ---------- */
 export default function Orders() {
-  const [list, setList] = useState(loadOrders);
+  const [list, setList] = useState(null);
+  const [error, setError] = useState("");
   const [tab, setTab] = useState("All");
   const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
   const [openNo, setOpenNo] = useState(null);
 
-  const commit = (next) => {
-    setList(next);
-    saveOrders(next);
-  };
-
-  const setStatus = (no, status) => commit(list.map((o) => (o.no === no ? { ...o, status } : o)));
-
-  const remove = (o) => {
-    if (window.confirm(`Delete order #${o.no}? This cannot be undone.`)) {
-      commit(list.filter((x) => x.no !== o.no));
-      setOpenNo(null);
+  const load = async () => {
+    try {
+      setList(await api("/orders", { auth: true }));
+      setError("");
+    } catch (e) {
+      setError(e.message === "Failed to fetch" ? "Cannot reach the server. Is the backend running?" : e.message);
     }
   };
 
+  useEffect(() => {
+    load();
+  }, []);
+
+  const setStatus = async (no, status) => {
+    const prev = list;
+    setList(list.map((o) => (o.no === no ? { ...o, status } : o)));
+    try {
+      await api(`/orders/${no}`, { method: "PATCH", auth: true, body: { status } });
+    } catch (e) {
+      alert(e.message);
+      setList(prev);
+    }
+  };
+
+  const remove = async (o) => {
+    if (!window.confirm(`Delete order #${o.no}? This cannot be undone.`)) return;
+    try {
+      await api(`/orders/${o.no}`, { method: "DELETE", auth: true });
+      setList(list.filter((x) => x.no !== o.no));
+      setOpenNo(null);
+    } catch (e) {
+      alert(e.message);
+    }
+  };
+
+  if (error) {
+    return (
+      <>
+        <div className="ov-head"><div><h2>Orders</h2></div></div>
+        <p className="al-error">{error}</p>
+        <button type="button" className="ad-btn ghost" onClick={load}>Try again</button>
+      </>
+    );
+  }
+  if (!list) return <p>Loading…</p>;
   const counts = { All: list.length };
   STATUSES.forEach((s) => (counts[s] = list.filter((o) => o.status === s).length));
 
@@ -156,7 +189,7 @@ export default function Orders() {
         o.customer.phone.replace(/\s/g, "").includes(text.replace(/\s/g, ""))
       );
     })
-    .sort((a, b) => b.createdAt - a.createdAt);
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
   const pages = Math.max(1, Math.ceil(shown.length / PAGE));
   const cur = Math.min(page, pages);

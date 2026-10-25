@@ -1,14 +1,66 @@
 import { useEffect, useState } from "react";
-import { loadProducts, saveProducts, sizesFor } from "./productsStore.js";
-import { loadCategories } from "./categoriesStore.js";
+import { sizesFor } from "./productsStore.js";
+import { api } from "../data/api.js";
 
 const PAGE = 10;
 const MAX_PHOTOS = 5;
-const money = (n) => `₦${Number(n).toLocaleString()}`;
-const catName = (slug) => (loadCategories().find((c) => c.slug === slug) || {}).name || "—";
 
-// shrink a photo in the browser before saving it
-function shrink(file, max = 800) {
+// typing "White, Red, Blue" adds each color with its own shade
+const COLOR_HEX = {
+  black: "#111111",
+  white: "#ffffff",
+  red: "#e53935",
+  blue: "#1e6bff",
+  "sky blue": "#5ac8fa",
+  navy: "#1f3a5f",
+  yellow: "#ffd60a",
+  gold: "#d4a017",
+  green: "#2e9e5b",
+  olive: "#556b2f",
+  grey: "#7a7a85",
+  gray: "#7a7a85",
+  silver: "#c0c0c8",
+  brown: "#8a4b1f",
+  beige: "#c8b08a",
+  cream: "#f3ead7",
+  khaki: "#bda97a",
+  maroon: "#7a1f2b",
+  purple: "#8a1fa8",
+  pink: "#ff8fb1",
+  orange: "#ff8a1f",
+  teal: "#00a3a3",
+  ash: "#b2beb5",
+  "navy blue": "#1f3a5f",
+  "light blue": "#8ec5ff",
+  "dark blue": "#0d2a6b",
+  "royal blue": "#2b4fd8",
+  "off white": "#f5f1e8",
+  "light grey": "#c9c9d1",
+  "dark grey": "#4a4a52",
+  charcoal: "#36454f",
+  wine: "#722f37",
+  burgundy: "#800020",
+  mustard: "#d9a400",
+  lemon: "#fff44f",
+  peach: "#ffcba4",
+  lilac: "#c8a2c8",
+  coffee: "#6f4e37",
+  "dark green": "#1f5c3a",
+  "army green": "#4b5320",
+  "light green": "#9be39b",
+  sky: "#5ac8fa",
+};
+const money = (n) => `₦${Number(n).toLocaleString()}`;
+const shadeOf = (name, fallback) => {
+  const n = name.toLowerCase().trim();
+  if (COLOR_HEX[n]) return COLOR_HEX[n];
+  for (const w of n.split(/\s+/)) if (COLOR_HEX[w]) return COLOR_HEX[w];
+  return fallback;
+};
+const catName = (cats, slug) => (cats.find((c) => c.slug === slug) || {}).name || "—";
+
+// shrink a photo in the browser before saving it (large enough to stay sharp on the product page)
+function shrink(file, max = 1400) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
@@ -19,7 +71,7 @@ function shrink(file, max = 800) {
       c.height = Math.round(img.height * scale);
       c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
       URL.revokeObjectURL(url);
-      resolve(c.toDataURL("image/jpeg", 0.78));
+      resolve(c.toDataURL("image/jpeg", 0.85));
     };
     img.onerror = () => {
       URL.revokeObjectURL(url);
@@ -54,8 +106,7 @@ function Thumb({ src }) {
 }
 
 /* ---------- add / edit panel ---------- */
-function ProductForm({ initial, onSave, onClose }) {
-  const CATEGORIES = loadCategories();
+function ProductForm({ initial, categories: CATEGORIES, onSave, onClose }) {
   const [f, setF] = useState(() =>
     initial
       ? { ...initial, price: String(initial.price), stock: String(initial.stock) }
@@ -86,9 +137,14 @@ function ProductForm({ initial, onSave, onClose }) {
     set("sizes", f.sizes.includes(s) ? f.sizes.filter((x) => x !== s) : [...f.sizes, s]);
 
   const addColor = () => {
-    const name = cName.trim() || "Color";
-    if (f.colors.some((c) => c.hex.toLowerCase() === cHex.toLowerCase())) return;
-    set("colors", [...f.colors, { name, hex: cHex }]);
+    const parts = cName.split(",").map((s) => s.trim()).filter(Boolean);
+    const names = parts.length ? parts : [`Color ${f.colors.length + 1}`];
+    const added = [...f.colors];
+    names.forEach((n) => {
+      const hex = shadeOf(n, cHex);
+      if (!added.some((c) => c.name.toLowerCase() === n.toLowerCase())) added.push({ name: n, hex });
+    });
+    set("colors", added);
     setCName("");
   };
 
@@ -209,18 +265,18 @@ function ProductForm({ initial, onSave, onClose }) {
             <span>Colors</span>
             {f.colors.length > 0 && (
               <div className="pr-colors">
-                {f.colors.map((c) => (
-                  <span key={c.hex} className="pr-color">
+                {f.colors.map((c, i) => (
+                  <span key={`${c.name}-${i}`} className="pr-color">
                     <i style={{ background: c.hex }} />
                     {c.name}
-                    <button type="button" aria-label={`Remove ${c.name}`} onClick={() => set("colors", f.colors.filter((x) => x.hex !== c.hex))}>✕</button>
+                    <button type="button" aria-label={`Remove ${c.name}`} onClick={() => set("colors", f.colors.filter((_, k) => k !== i))}>✕</button>
                   </span>
                 ))}
               </div>
             )}
             <div className="pr-color-add">
               <input type="color" value={cHex} onChange={(ev) => setCHex(ev.target.value)} aria-label="Pick a color" />
-              <input value={cName} onChange={(ev) => setCName(ev.target.value)} placeholder="Color name, e.g. Olive" />
+              <input value={cName} onChange={(ev) => setCName(ev.target.value)} placeholder="One color, or several: White, Red, Blue" />
               <button type="button" onClick={addColor}>Add</button>
             </div>
           </div>
@@ -248,38 +304,87 @@ function ProductForm({ initial, onSave, onClose }) {
 
 /* ---------- the page ---------- */
 export default function Products() {
-  const CATEGORIES = loadCategories();
-  const [list, setList] = useState(loadProducts);
+  const [CATEGORIES, setCategories] = useState([]);
+  const [list, setList] = useState(null);
+  const [error, setError] = useState("");
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("all");
   const [status, setStatus] = useState("all");
   const [page, setPage] = useState(1);
   const [editing, setEditing] = useState(null); // null | "new" | product
 
-  const commit = (next) => {
-    setList(next);
-    if (!saveProducts(next)) {
-      alert("The browser could not save this (storage is full). Try fewer or smaller photos.");
+  const load = async () => {
+    try {
+      const [cats, prods] = await Promise.all([
+        api("/categories/all", { auth: true }),
+        api("/products/all", { auth: true }),
+      ]);
+      setCategories(cats);
+      setList(prods);
+      setError("");
+    } catch (e) {
+      setError(e.message === "Failed to fetch" ? "Cannot reach the server. Is the backend running?" : e.message);
     }
   };
 
-  const patch = (id, change) => commit(list.map((p) => (p.id === id ? { ...p, ...change } : p)));
+  useEffect(() => {
+    load();
+  }, []);
 
-  const remove = (p) => {
-    if (window.confirm(`Delete "${p.name}"? This cannot be undone.`)) {
-      commit(list.filter((x) => x.id !== p.id));
+  const patch = async (id, change) => {
+    setList(list.map((p) => (p.id === id ? { ...p, ...change } : p)));
+    try {
+      await api(`/products/${id}`, { method: "PUT", auth: true, body: change });
+    } catch (e) {
+      alert(e.message);
+      load();
     }
   };
 
-  const save = (data) => {
-    if (data.id) {
-      commit(list.map((p) => (p.id === data.id ? data : p)));
-    } else {
-      const id = list.reduce((m, p) => Math.max(m, p.id), 0) + 1;
-      commit([{ ...data, id, createdAt: Date.now() }, ...list]);
+  const remove = async (p) => {
+    if (!window.confirm(`Delete "${p.name}"? This cannot be undone.`)) return;
+    try {
+      await api(`/products/${p.id}`, { method: "DELETE", auth: true });
+      await load();
+    } catch (e) {
+      alert(e.message);
     }
-    setEditing(null);
   };
+
+  const save = async (data) => {
+    const body = {
+      name: data.name,
+      category: data.category,
+      price: data.price,
+      stock: data.stock,
+      details: data.details,
+      sizes: data.sizes,
+      colors: data.colors,
+      images: data.images,
+      featured: data.featured,
+      soldOut: data.soldOut,
+      visible: data.visible,
+    };
+    try {
+      if (data.id) await api(`/products/${data.id}`, { method: "PUT", auth: true, body });
+      else await api("/products", { method: "POST", auth: true, body });
+      setEditing(null);
+      await load();
+    } catch (e) {
+      alert(e.message);
+    }
+  };
+
+  if (error) {
+    return (
+      <>
+        <div className="ov-head"><div><h2>Products</h2></div></div>
+        <p className="al-error">{error}</p>
+        <button type="button" className="ad-btn ghost" onClick={load}>Try again</button>
+      </>
+    );
+  }
+  if (!list) return <p>Loading…</p>;
 
   const shown = list
     .filter((p) => {
@@ -291,7 +396,7 @@ export default function Products() {
       if (status === "hidden" && p.visible) return false;
       return true;
     })
-    .sort((a, b) => b.createdAt - a.createdAt);
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
   const pages = Math.max(1, Math.ceil(shown.length / PAGE));
   const cur = Math.min(page, pages);
@@ -354,7 +459,7 @@ export default function Products() {
                       <b>{p.name}</b>
                     </div>
                   </td>
-                  <td>{catName(p.category)}</td>
+                  <td>{catName(CATEGORIES, p.category)}</td>
                   <td>{money(p.price)}</td>
                   <td className={p.stock <= 3 ? "pr-low" : ""}>{p.stock === 0 ? "0 (out)" : p.stock}</td>
                   <td><Switch on={p.soldOut} onChange={(v) => patch(p.id, { soldOut: v })} label="Sold out" /></td>
@@ -386,6 +491,7 @@ export default function Products() {
 
       {editing && (
         <ProductForm
+          categories={CATEGORIES}
           initial={editing === "new" ? null : editing}
           onSave={save}
           onClose={() => setEditing(null)}

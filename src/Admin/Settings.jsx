@@ -1,17 +1,6 @@
-import { useState } from "react";
-import { DEFAULTS, getSettings, saveSettings } from "./settingsStore.js";
-
-// everything the demo keeps in the browser
-const RESET_KEYS = [
-  "admin-products",
-  "admin-categories",
-  "admin-orders",
-  "admin-banners",
-  "admin-settings",
-  "cart",
-  "delivery",
-  "recent",
-];
+import { useEffect, useState } from "react";
+import { DEFAULTS, getSettings } from "./settingsStore.js";
+import { api } from "../data/api.js";
 
 // 0801 234 5678 -> 2348012345678
 function normalizePhone(p) {
@@ -46,10 +35,26 @@ function Field({ label, hint, error, wide, children }) {
 }
 
 export default function Settings() {
-  const [saved, setSaved] = useState(getSettings);
-  const [f, setF] = useState(getSettings);
+  const [saved, setSaved] = useState(DEFAULTS);
+  const [f, setF] = useState(DEFAULTS);
   const [errors, setErrors] = useState({});
   const [done, setDone] = useState(false);
+  const [ready, setReady] = useState(false);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    api("/settings/all", { auth: true })
+      .then((d) => {
+        setSaved({ ...DEFAULTS, ...d });
+        // anything you saved in this browser earlier carries over, so you can push it with one click on Save
+        setF({ ...DEFAULTS, ...getSettings(), ...d });
+        setReady(true);
+      })
+      .catch((e) =>
+        setError(e.message === "Failed to fetch" ? "Cannot reach the server. Is the backend running?" : e.message)
+      );
+  }, []);
 
   const dirty = JSON.stringify(f) !== JSON.stringify(saved);
   const set = (k) => (e) => {
@@ -61,7 +66,7 @@ export default function Settings() {
     setDone(false);
   };
 
-  const save = (ev) => {
+  const save = async (ev) => {
     ev.preventDefault();
     const e = {};
     if (!f.storeName.trim()) e.storeName = "Enter the store name";
@@ -77,13 +82,16 @@ export default function Settings() {
     if (Object.keys(e).length) return;
 
     const next = { ...f, whatsapp: wa, paystackKey: key };
-    if (!saveSettings(next)) {
-      alert("The browser could not save this (storage is full).");
-      return;
+    setBusy(true);
+    try {
+      const out = await api("/settings", { method: "PUT", auth: true, body: next });
+      setF(out);
+      setSaved(out);
+      setDone(true);
+    } catch (err) {
+      alert(err.message);
     }
-    setF(next);
-    setSaved(next);
-    setDone(true);
+    setBusy(false);
   };
 
   const discard = () => {
@@ -92,20 +100,15 @@ export default function Settings() {
     setDone(false);
   };
 
-  const resetDemo = () => {
-    if (
-      window.confirm(
-        "Reset all demo data? Products, categories, orders, banners, settings and the cart go back to the starting demo. You stay signed in."
-      )
-    ) {
-      RESET_KEYS.forEach((k) => {
-        try {
-          localStorage.removeItem(k);
-        } catch {}
-      });
-      window.location.reload();
-    }
-  };
+  if (error) {
+    return (
+      <>
+        <div className="ov-head"><div><h2>Settings</h2></div></div>
+        <p className="al-error">{error}</p>
+      </>
+    );
+  }
+  if (!ready) return <p>Loading…</p>;
 
   return (
     <form onSubmit={save} noValidate>
@@ -208,23 +211,14 @@ export default function Settings() {
 
       <section className="ov-card st-card">
         <h3>Admin account</h3>
-        <p>Changing the admin password will work once the backend is connected.</p>
-      </section>
-
-      <section className="ov-card st-card st-danger">
-        <h3>Demo data</h3>
-        <p>
-          Everything in this admin is saved in this browser while we build the store. Reset it to start the demo
-          clean.
-        </p>
-        <button type="button" className="ad-btn ghost st-reset" onClick={resetDemo}>Reset demo data</button>
+        <p>The admin email and password are set in the backend's .env file.</p>
       </section>
 
       <div className="st-bar">
         <span>{done ? "Saved ✓" : dirty ? "You have unsaved changes" : "All changes saved"}</span>
         <div>
           <button type="button" className="ad-btn ghost" onClick={discard} disabled={!dirty}>Discard</button>
-          <button type="submit" className="ad-btn" disabled={!dirty}>Save changes</button>
+          <button type="submit" className="ad-btn" disabled={!dirty || busy}>{busy ? "Saving…" : "Save changes"}</button>
         </div>
       </div>
     </form>

@@ -88,3 +88,17 @@ export function placeOrder({ items, customer, total, method }) {
   saveOrders([order, ...list]);
   return order;
 }
+
+// ---- used by the store's Track Order and thank-you pages ----
+const last10 = (p) => String(p).replace(/\D/g, "").slice(-10);
+
+export function getOrder(no) {
+  const n = String(no).replace(/\D/g, "");
+  return loadOrders().find((o) => String(o.no) === n) || null;
+}
+
+// the order number AND the phone number must match
+export function findOrder(no, phone) {
+  const o = getOrder(no);
+  return o && last10(o.customer.phone) === last10(phone) ? o : null;
+}

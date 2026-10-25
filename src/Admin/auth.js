@@ -1,35 +1,16 @@
-const KEY = "admin-token";
-
-// TEMPORARY demo login that runs in the browser.
-// When the backend is ready, replace login() with a request to it
-// (for example POST /api/admin/login) and save the token it returns.
-const DEMO = { email: "admin@cityfashion.com", password: "admin123" };
+import { api } from "../data/api.js";
 
 export async function login(email, password) {
-  await new Promise((r) => setTimeout(r, 500)); // pretend we are waiting for a server
-  if (email.trim().toLowerCase() === DEMO.email && password === DEMO.password) {
-    try {
-      localStorage.setItem(KEY, "demo-token");
-    } catch {}
+  try {
+    const { token } = await api("/admin/login", { method: "POST", body: { email, password } });
+    localStorage.setItem("admin-token", token);
     return { ok: true };
-  }
-  return { ok: false, error: "Wrong email or password" };
-}
-
-export function logout() {
-  try {
-    localStorage.removeItem(KEY);
-  } catch {}
-}
-
-export function getToken() {
-  try {
-    return localStorage.getItem(KEY);
-  } catch {
-    return null;
+  } catch (e) {
+    const msg = e.message === "Failed to fetch" ? "Cannot reach the server. Is the backend running?" : e.message;
+    return { ok: false, error: msg };
   }
 }
 
-export function isLoggedIn() {
-  return !!getToken();
-}
+export const logout = () => localStorage.removeItem("admin-token");
+export const getToken = () => localStorage.getItem("admin-token");
+export const isLoggedIn = () => !!getToken();

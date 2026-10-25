@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import "../css/Navbar.css";
 import { useCartCount } from "../data/cart.js";
 import { getSettings } from "../Admin/settingsStore.js";
+import BottomNav from "./BottomNav.jsx";
 
 export default function Navbar() {
   const cartCount = useCartCount();
@@ -32,6 +33,7 @@ export default function Navbar() {
   const [moreOpen, setMoreOpen] = useState(false);
   const moreRef = useRef(null);
   const [menuOpen, setMenuOpen] = useState(false); // phone side menu
+  const [searchOpen, setSearchOpen] = useState(false); // phone search box
   const moreLinks = [
     { label: "T-shirts", slug: "tees" },
     { label: "Jeans", slug: "jeans" },
@@ -57,6 +59,7 @@ export default function Navbar() {
   // phone menu: close on page change, lock page scroll while open, Esc to close
   useEffect(() => {
     setMenuOpen(false);
+    setSearchOpen(false);
   }, [pathname, query_]);
 
   useEffect(() => {
@@ -142,7 +145,7 @@ export default function Navbar() {
         </div>
       </nav>
 
-      <form className="nav-search" onSubmit={handleSearch}>
+      <form className={searchOpen ? "nav-search open" : "nav-search"} onSubmit={handleSearch}>
         <input
           type="search"
           placeholder="Search for products..."
@@ -155,6 +158,9 @@ export default function Navbar() {
       <div className="nav-actions">
         {/* <Link to="/signin" className="nav-signin">Sign in</Link>
         <Link to="/signup" className="nav-signup">Sign up</Link> */}
+        <button type="button" className="nav-searchbtn" aria-label="Search" onClick={() => setSearchOpen((v) => !v)}>
+          🔍
+        </button>
         <Link to="/cart" className="nav-cart" aria-label="Cart">
           🛒
           {cartCount > 0 && <span className="nav-count">{cartCount}</span>}
@@ -196,6 +202,7 @@ export default function Navbar() {
         </nav>
       </aside>
     </header>
+    <BottomNav cartCount={cartCount} />
     </>
   );
 }
