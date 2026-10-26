@@ -170,3 +170,47 @@
 html[data-theme="light"] .nav-links > a.active,
 html[data-theme="light"] .more-btn.active { color: #000; }
 html[data-theme="light"] .more-menu a.active { color: #b38600; }
+
+/* category rows with a dropdown arrow */
+.cat-group { display: flex; flex-direction: column; }
+.cat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.cat-row > a { flex: 1; }
+.cat-arrow {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  background: none;
+  border: 0;
+  border-radius: 8px;
+  color: #b4b4bd;
+  cursor: pointer;
+}
+.cat-arrow:hover { color: #fff; }
+.cat-arrow svg { transition: transform 0.2s ease; }
+.cat-row.open .cat-arrow svg { transform: rotate(180deg); }
+.cat-row.open > a { color: #fff; }
+
+.cat-subs {
+  display: flex;
+  flex-direction: column;
+  margin: 2px 0 8px 6px;
+  padding-left: 14px;
+  border-left: 2px solid #2a2a32;
+}
+.cat-subs a {
+  padding: 8px 0;
+  font-size: 0.95em;
+  opacity: 0.9;
+}
+.cat-subs a.active { color: #ffd60a; opacity: 1; }
+
+html[data-theme="light"] .cat-arrow { color: #555; }
+html[data-theme="light"] .cat-arrow:hover,
+html[data-theme="light"] .cat-row.open > a { color: #000; }
+html[data-theme="light"] .cat-subs { border-left-color: #ddd; }

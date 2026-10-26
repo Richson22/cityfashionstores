@@ -180,7 +180,7 @@ export default function Home() {
 
       <section className="about">
         <span className="about-eyebrow">ABOUT US</span>
-        <h2>CITY FASHION STORES — YOUR STYLE. YOUR CONFIDENCE. YOUR IDENTITY.</h2>
+        <h2>CITY FASHION STORES. YOUR STYLE. YOUR CONFIDENCE. YOUR IDENTITY.</h2>
         <p>
           We are a fashion retail business at 106 Old Enugu Road, Mile 50, Abakaliki, Ebonyi State, committed to
           providing stylish, quality-conscious, and affordable fashion that helps you look good and feel confident on
@@ -223,7 +223,7 @@ export default function Home() {
             <br />
             <em>FEELINGS.</em>
           </h3>
-          <p>Menswear built different — streetwear, sneakers and essentials, delivered across Nigeria.</p>
+          <p>Menswear built different, streetwear, sneakers and essentials, delivered across Nigeria.</p>
           <div className="foot-social">
             <a href={settings.instagram} target="_blank" rel="noreferrer" aria-label="Instagram">
               <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -247,7 +247,6 @@ export default function Home() {
 
         <div className="foot-col">
           <h4>CUSTOMER SUPPORT</h4>
-          <Link to="/size-guide">Size Guide</Link>
           <Link to="/shipping">Shipping Info</Link>
           <Link to="/returns">Returns &amp; Exchange</Link>
           <Link to="/faqs">FAQs</Link>
@@ -258,7 +257,7 @@ export default function Home() {
           <h4>QUICK LINKS</h4>
           <Link to="/shop">Shop Now</Link>
           <Link to="/about">About Us</Link>
-          <Link to="/account">My Account</Link>
+          <Link to="/policy">Policy</Link>
           <Link to="/track">Track Order</Link>
         </div>
       </div>

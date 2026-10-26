@@ -22,8 +22,7 @@ html[data-theme="light"] .ab {
 .ab-hero { text-align: center; padding: 28px 0 40px; border-bottom: 1px solid var(--line); }
 .ab-eyebrow { display: block; margin-bottom: 10px; color: #ffd60a; font-size: 0.95rem; font-weight: 800; letter-spacing: 0.22em; }
 html[data-theme="light"] .ab-eyebrow { color: #b38600; }
-.ab-hero h1 { margin: 0 0 14px; font-size: clamp(2.2rem, 6vw, 4rem); font-weight: 900; line-height: 1; letter-spacing: -0.01em; }
-.ab-tag { margin: 0; color: var(--mute); font-size: 1.25rem; }
+.ab-hero h1 { margin: 0 0 14px; font-size: clamp(1.7rem, 4.5vw, 2.8rem); font-weight: 600; line-height: 1.2; letter-spacing: 0.04em; }.ab-tag { margin: 0; color: var(--mute); font-size: 1.25rem; }
 
 .ab-sec { padding: 38px 0 0; }
 .ab-sec h2 { margin: 0 0 16px; font-size: 1.6rem; font-weight: 800; }
@@ -74,3 +73,5 @@ html[data-theme="light"] .ab-list li::before { color: #b38600; }
   .ab-sec p { font-size: 1.02rem; }
   .ab-tag { font-size: 1.05rem; }
 }
+
+

@@ -40,6 +40,51 @@ export default function Navbar() {
     { label: c.name, slug: c.slug, sub: false },
     ...c.subs.map((s) => ({ label: s.name, slug: s.slug, sub: true })),
   ]);
+    // which main category is expanded (only one at a time)
+  const [openCat, setOpenCat] = useState("");
+
+  const renderCats = (onPick) =>
+    cats.map((c) => {
+      const hasSubs = c.subs.length > 0;
+      const open = openCat === c.slug;
+      const here = pathname === "/shop" && currentCat === c.slug;
+      return (
+        <div className="cat-group" key={c.slug}>
+          <div className={`cat-row${open ? " open" : ""}`}>
+            <Link to={`/shop?category=${c.slug}`} className={here ? "active" : ""} onClick={onPick}>
+              {c.name}
+            </Link>
+            {hasSubs && (
+              <button
+                type="button"
+                className="cat-arrow"
+                aria-label={`Show ${c.name} sub-categories`}
+                aria-expanded={open}
+                onClick={() => setOpenCat(open ? "" : c.slug)}
+              >
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M6 9l6 6 6-6" />
+                </svg>
+              </button>
+            )}
+          </div>
+          {hasSubs && open && (
+            <div className="cat-subs">
+              {c.subs.map((s) => (
+                <Link
+                  key={s.slug}
+                  to={`/shop?category=${s.slug}`}
+                  className={pathname === "/shop" && currentCat === s.slug ? "active" : ""}
+                  onClick={onPick}
+                >
+                  {s.name}
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    });
 
   useEffect(() => {
     const close = (e) => {
@@ -130,16 +175,7 @@ export default function Navbar() {
           </button>
           {moreOpen && (
             <div className="more-menu">
-              {moreLinks.map((l) => (
-                <Link
-                  key={l.slug}
-                  to={`/shop?category=${l.slug}`}
-                  className={`${pathname === "/shop" && currentCat === l.slug ? "active" : ""}${l.sub ? " sub" : ""}`}
-                  onClick={() => setMoreOpen(false)}
-                >
-                  {l.label}
-                </Link>
-              ))}
+              {renderCats(() => setMoreOpen(false))}
             </div>
           )}
         </div>
@@ -189,16 +225,7 @@ export default function Navbar() {
           <Link to="/" className={pathname === "/" ? "active" : ""} onClick={() => setMenuOpen(false)}>Home</Link>
           <Link to="/shop" className={isShop ? "active" : ""} onClick={() => setMenuOpen(false)}>Shop Now!</Link>          <Link to="/categories" className={isCats ? "active" : ""} onClick={() => setMenuOpen(false)}>All Categories</Link>
           <h4>MORE</h4>
-          {moreLinks.map((l) => (
-            <Link
-              key={l.slug}
-              to={`/shop?category=${l.slug}`}
-              className={`${pathname === "/shop" && currentCat === l.slug ? "active" : ""}${l.sub ? " sub" : ""}`}
-              onClick={() => setMenuOpen(false)}
-            >
-              {l.label}
-            </Link>
-          ))}
+          {renderCats(() => setMenuOpen(false))}
         </nav>
       </aside>
     </header>

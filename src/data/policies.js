@@ -164,7 +164,7 @@ export const POLICIES = {
       {
         h: "Delivery time",
         list: [
-          "Lagos: 1 to 2 business days",
+          "Ebonyi: Same day",
           "Other states: 3 to 4 business days",
         ],
         p: ["Delivery time counts from when your order is confirmed (and paid, if you pay online). It is an estimate. Public holidays, weather and road conditions can cause delays."],
