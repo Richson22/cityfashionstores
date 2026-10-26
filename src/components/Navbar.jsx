@@ -223,9 +223,9 @@ export default function Navbar() {
         </div>
         <nav className="side-links">
           <Link to="/" className={pathname === "/" ? "active" : ""} onClick={() => setMenuOpen(false)}>Home</Link>
-          <Link to="/shop" className={isShop ? "active" : ""} onClick={() => setMenuOpen(false)}>Shop Now!</Link>          <Link to="/categories" className={isCats ? "active" : ""} onClick={() => setMenuOpen(false)}>All Categories</Link>
-          <h4>MORE</h4>
-          {renderCats(() => setMenuOpen(false))}
+          <Link to="/shop" className={isShop ? "active" : ""} onClick={() => setMenuOpen(false)}>Shop Now!</Link>
+          <Link to="/track" className={pathname === "/track" ? "active" : ""} onClick={() => setMenuOpen(false)}>Track Order</Link>
+          <Link to="/categories" className={isCats ? "active" : ""} onClick={() => setMenuOpen(false)}>All Categories</Link>
         </nav>
       </aside>
     </header>
