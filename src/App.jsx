@@ -19,6 +19,7 @@ import Orders from './Admin/Orders.jsx'
 import Banners from './Admin/Banners.jsx'
 import Settings from './Admin/Settings.jsx'
 import About from "./Pages/About.jsx";
+import Policy from "./Pages/Policy.jsx";
 
 function App() {
   return (
@@ -35,6 +36,9 @@ function App() {
         <Route path="/order-success/:no" element={<OrderSuccess />} />
         <Route path="/returns" element={<Returns />} />
         <Route path="/about" element={<About />} />
+        <Route path="/terms" element={<Policy kind="terms" />} />
+        <Route path="/privacy" element={<Policy kind="privacy" />} />
+        <Route path="/shipping" element={<Policy kind="shipping" />} />
 
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route
