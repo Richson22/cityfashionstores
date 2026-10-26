@@ -180,7 +180,7 @@ export default function Home() {
 
       <section className="about">
         <span className="about-eyebrow">ABOUT US</span>
-        <h2>CITY FASHION STORES. YOUR STYLE. YOUR CONFIDENCE. YOUR IDENTITY.</h2>
+        <h2>CITY FASHION STORES.</h2>
         <p>
           We are a fashion retail business at 106 Old Enugu Road, Mile 50, Abakaliki, Ebonyi State, committed to
           providing stylish, quality-conscious, and affordable fashion that helps you look good and feel confident on
