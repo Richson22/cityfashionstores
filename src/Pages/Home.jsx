@@ -180,16 +180,14 @@ export default function Home() {
 
       <section className="about">
         <span className="about-eyebrow">ABOUT US</span>
-        <h2>CITY FASHION STORES — MEN'S STREETWEAR, DELIVERED ACROSS NIGERIA</h2>
+        <h2>CITY FASHION STORES — YOUR STYLE. YOUR CONFIDENCE. YOUR IDENTITY.</h2>
         <p>
-          City Fashion Stores is a Nigerian online men's fashion store for guys who dress with
-          intent. We stock graphic tees, shirts, polos, jeans, jackets, hoodies, joggers,
-          sneakers, caps, glasses and accessories — clean everyday fits and statement
-          pieces, all menswear.
+          We are a fashion retail business at 106 Old Enugu Road, Mile 50, Abakaliki, Ebonyi State, committed to
+          providing stylish, quality-conscious, and affordable fashion that helps you look good and feel confident on
+          every occasion. Now you can shop with us online from anywhere in Nigeria.
         </p>
         <p>
-          Order online and pay securely, or order on WhatsApp. We deliver to Lagos, Abuja,
-          Port Harcourt and every state in Nigeria. Fits Over Feelings.
+          <Link to="/about" className="arr-all">Read our story →</Link>
         </p>
       </section>
 
@@ -259,6 +257,7 @@ export default function Home() {
         <div className="foot-col">
           <h4>QUICK LINKS</h4>
           <Link to="/shop">Shop Now</Link>
+          <Link to="/about">About Us</Link>
           <Link to="/account">My Account</Link>
           <Link to="/track">Track Order</Link>
         </div>

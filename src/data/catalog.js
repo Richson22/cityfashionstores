@@ -1,7 +1,14 @@
 import { useEffect, useState } from "react";
 import { api } from "./api.js";
 
-const EMPTY = { categories: [], products: [], latest: [], rows: [] };
+const EMPTY = {
+  categories: [],
+  allCategories: [],
+  products: [],
+  latest: [],
+  rows: [],
+  slugsFor: (s) => [s],
+};
 
 function buildCatalog(all, cats) {
   const products = all.map((p) => ({
@@ -21,16 +28,34 @@ function buildCatalog(all, cats) {
     createdAt: p.createdAt,
   }));
 
-  const counts = {};
+  const own = {};
   products.forEach((p) => {
-    counts[p.category] = (counts[p.category] || 0) + 1;
+    own[p.category] = (own[p.category] || 0) + 1;
   });
 
-  const categories = cats.map((c) => ({
+  const subsOf = (slug) => cats.filter((c) => c.parent === slug);
+  const total = (slug) => (own[slug] || 0) + subsOf(slug).reduce((n, s) => n + (own[s.slug] || 0), 0);
+  // a main category plus everything inside it
+  const slugsFor = (slug) => [slug, ...subsOf(slug).map((s) => s.slug)];
+
+  // main categories only (what the home page and the categories page show)
+  const categories = cats
+    .filter((c) => !c.parent)
+    .map((c) => ({
+      name: c.name,
+      slug: c.slug,
+      image: c.image,
+      count: total(c.slug),
+      subs: subsOf(c.slug).map((s) => ({ name: s.name, slug: s.slug, image: s.image, count: own[s.slug] || 0 })),
+    }));
+
+  // every category, including sub-categories
+  const allCategories = cats.map((c) => ({
     name: c.name,
     slug: c.slug,
     image: c.image,
-    count: counts[c.slug] || 0,
+    parent: c.parent || "",
+    count: own[c.slug] || 0,
   }));
 
   const newest = (a, b) => new Date(b.createdAt) - new Date(a.createdAt);
@@ -41,10 +66,10 @@ function buildCatalog(all, cats) {
     .map((c) => ({
       title: c.name.toUpperCase(),
       slug: c.slug,
-      items: products.filter((p) => p.category === c.slug).sort(newest).slice(0, 4),
+      items: products.filter((p) => slugsFor(c.slug).includes(p.category)).sort(newest).slice(0, 4),
     }));
 
-  return { categories, products, latest, rows };
+  return { categories, allCategories, products, latest, rows, slugsFor };
 }
 
 // keep the result for 30 seconds so moving between pages is instant

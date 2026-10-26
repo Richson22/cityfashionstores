@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { sizesFor } from "./productsStore.js";
 import { api } from "../data/api.js";
+import { uploadPhoto } from "./upload.js";
 
 const PAGE = 10;
 const MAX_PHOTOS = 5;
@@ -57,27 +58,27 @@ const shadeOf = (name, fallback) => {
   for (const w of n.split(/\s+/)) if (COLOR_HEX[w]) return COLOR_HEX[w];
   return fallback;
 };
-const catName = (cats, slug) => (cats.find((c) => c.slug === slug) || {}).name || "—";
+const catName = (cats, slug) => {
+  const c = cats.find((x) => x.slug === slug);
+  if (!c) return "—";
+  const p = c.parent ? cats.find((x) => x.slug === c.parent) : null;
+  return p ? `${p.name} › ${c.name}` : c.name;
+};
 
-// shrink a photo in the browser before saving it (large enough to stay sharp on the product page)
-function shrink(file, max = 1400) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = () => {
-      const scale = Math.min(1, max / Math.max(img.width, img.height));
-      const c = document.createElement("canvas");
-      c.width = Math.round(img.width * scale);
-      c.height = Math.round(img.height * scale);
-      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
-      URL.revokeObjectURL(url);
-      resolve(c.toDataURL("image/jpeg", 0.85));
-    };
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      reject();
-    };
-    img.src = url;
+// category dropdown: main categories, with their sub-categories grouped under them
+function CatOptions({ cats }) {
+  const tops = cats.filter((c) => !c.parent);
+  return tops.map((t) => {
+    const kids = cats.filter((c) => c.parent === t.slug);
+    if (!kids.length) return <option key={t.slug} value={t.slug}>{t.name}</option>;
+    return (
+      <optgroup key={t.slug} label={t.name}>
+        <option value={t.slug}>{t.name} (general)</option>
+        {kids.map((k) => (
+          <option key={k.slug} value={k.slug}>{k.name}</option>
+        ))}
+      </optgroup>
+    );
   });
 }
 
@@ -124,7 +125,8 @@ function ProductForm({ initial, categories: CATEGORIES, onSave, onClose }) {
   }, [onClose]);
 
   const set = (k, v) => setF((p) => ({ ...p, [k]: v }));
-  const sizeOpts = sizesFor(f.category);
+  // a sub-category uses the size options of its main category
+  const sizeOpts = sizesFor((CATEGORIES.find((c) => c.slug === f.category) || {}).parent || f.category);
 
   const errs = {};
   if (!f.name.trim()) errs.name = "Enter the product name";
@@ -156,8 +158,10 @@ function ProductForm({ initial, categories: CATEGORIES, onSave, onClose }) {
     const out = [];
     for (const file of files) {
       try {
-        out.push(await shrink(file));
-      } catch {}
+        out.push(await uploadPhoto(file));
+      } catch (err) {
+        alert(err.message || "Photo upload failed");
+      }
     }
     setBusy(false);
     setF((p) => ({ ...p, images: [...p.images, ...out] }));
@@ -201,9 +205,7 @@ function ProductForm({ initial, categories: CATEGORIES, onSave, onClose }) {
               <span>Category</span>
               <select value={f.category} onChange={(ev) => set("category", ev.target.value)}>
                 <option value="">Select category</option>
-                {CATEGORIES.map((c) => (
-                  <option key={c.slug} value={c.slug}>{c.name}</option>
-                ))}
+                <CatOptions cats={CATEGORIES} />
               </select>
               {e.category && <em>{e.category}</em>}
             </label>
@@ -388,7 +390,7 @@ export default function Products() {
 
   const shown = list
     .filter((p) => {
-      if (cat !== "all" && p.category !== cat) return false;
+      if (cat !== "all" && p.category !== cat && !CATEGORIES.some((c) => c.slug === p.category && c.parent === cat)) return false;
       if (q.trim() && !p.name.toLowerCase().includes(q.trim().toLowerCase())) return false;
       if (status === "instock" && !(p.stock > 0 && !p.soldOut)) return false;
       if (status === "low" && !(p.stock > 0 && p.stock <= 3)) return false;
@@ -422,9 +424,7 @@ export default function Products() {
         <input type="search" value={q} onChange={filt(setQ)} placeholder="Search products…" />
         <select value={cat} onChange={filt(setCat)} aria-label="Category">
           <option value="all">All categories</option>
-          {CATEGORIES.map((c) => (
-            <option key={c.slug} value={c.slug}>{c.name}</option>
-          ))}
+          <CatOptions cats={CATEGORIES} />
         </select>
         <select value={status} onChange={filt(setStatus)} aria-label="Status">
           <option value="all">All status</option>

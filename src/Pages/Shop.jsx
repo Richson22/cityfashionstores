@@ -1,47 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import Navbar from "../components/Navbar.jsx";
 import "../Css/shop.css";
 import { useCatalog } from "../data/catalog.js";
-
-// DEMO DATA for the client preview.
-// Later this list will come from the admin / backend (same fields).
-export const CATS = [
-  { slug: "armless", name: "Armless" },
-  { slug: "bags", name: "Bags" },
-  { slug: "belts", name: "Belts" },
-  { slug: "boxers", name: "Boxers" },
-  { slug: "caps", name: "Caps" },
-  { slug: "eyeglasses", name: "Eyeglasses" },
-  { slug: "hoodies", name: "Hoodies" },
-  { slug: "jackets", name: "Jackets" },
-  { slug: "jeans", name: "Jeans" },
-  { slug: "jerseys", name: "Jerseys" },
-  { slug: "joggers", name: "Joggers" },
-  { slug: "polos", name: "Polos" },
-  { slug: "shirts", name: "Shirts" },
-  { slug: "shoes", name: "Shoes" },
-  { slug: "sneakers", name: "Sneakers" },
-  { slug: "tees", name: "T-shirts" },
-  { slug: "trousers", name: "Trousers" },
-];
-
-// photo file prefix per category: /products/<prefix>-1.jpg ... -4.jpg
-const IMG = { tees: "tee", shirts: "shirt", boxers: "boxer", jerseys: "jersey", eyeglasses: "glasses", caps: "cap" };
-const PALETTE = ["#111111", "#ffffff", "#e53935", "#1e6bff", "#ffd60a", "#7a7a85"];
-
-export const PRODUCTS = CATS.flatMap((c, ci) =>
-  [1, 2, 3, 4].map((i) => ({
-    id: i * 100 + ci, // higher id = newer
-    name: `${c.name} Style ${i}`,
-    category: c.slug,
-    price: 7500 + ((ci * 3 + i * 5) % 12) * 1500,
-    image: `/products/${IMG[c.slug] || c.slug}-${i}.jpg`,
-    featured: i === 1,
-    soldOut: (ci + i) % 9 === 0,
-    colors: i % 2 === 0 ? PALETTE.slice(0, 2 + (ci % 3)) : undefined,
-  }))
-);
 
 const SORTS = [
   { key: "latest", label: "Latest arrivals" },
@@ -67,8 +28,8 @@ function ShopCard({ p }) {
       {p.colors && p.colors.length > 1 && (
         <div className="sh-colors">
           <span className="sh-dots">
-            {p.colors.map((c) => (
-              <i key={c} style={{ background: c }} />
+            {p.colors.map((c, i) => (
+              <i key={`${c}-${i}`} style={{ background: c }} />
             ))}
           </span>
           {p.colors.length} colors
@@ -79,8 +40,8 @@ function ShopCard({ p }) {
 }
 
 export default function Shop() {
-  // products and categories now come from the admin
-  const { categories: CATS, products: PRODUCTS } = useCatalog();
+  // products and categories come from the admin
+  const { categories: CATS, allCategories, products: PRODUCTS, slugsFor, loading } = useCatalog();
   const [params, setParams] = useSearchParams();
   const category = params.get("category") || "all";
   const search = (params.get("search") || "").trim().toLowerCase();
@@ -104,21 +65,26 @@ export default function Shop() {
   };
 
   const list = useMemo(() => {
+    // a main category also shows everything inside its sub-categories
+    const slugs = category === "all" ? null : slugsFor(category);
     let items = PRODUCTS.filter((p) => {
-      if (category !== "all" && p.category !== category) return false;
+      if (slugs && !slugs.includes(p.category)) return false;
       if (show === "featured" && !p.featured) return false;
       if (search && !p.name.toLowerCase().includes(search)) return false;
       return true;
     });
     items = [...items];
-    if (sort === "latest") items.sort((a, b) => b.id - a.id);
+    const time = (p) => new Date(p.createdAt).getTime() || 0;
+    if (sort === "latest") items.sort((a, b) => time(b) - time(a));
     if (sort === "az") items.sort((a, b) => a.name.localeCompare(b.name));
     if (sort === "low") items.sort((a, b) => a.price - b.price);
     if (sort === "high") items.sort((a, b) => b.price - a.price);
     return items;
-  }, [category, show, sort, search]);
+  }, [PRODUCTS, slugsFor, category, show, sort, search]);
 
-  const current = CATS.find((c) => c.slug === category);
+  const current = allCategories.find((c) => c.slug === category);
+  // the main category that is open (the one picked, or the one that owns the picked sub-category)
+  const openTop = CATS.find((c) => c.slug === category || c.subs.some((s) => s.slug === category));
   const title = search ? `RESULTS FOR "${search}"` : current ? current.name.toUpperCase() : "ALL PRODUCTS";
 
   return (
@@ -151,9 +117,21 @@ export default function Shop() {
               All
             </button>
             {CATS.map((c) => (
-              <button key={c.slug} className={category === c.slug ? "on" : ""} onClick={() => pickCategory(c.slug)}>
-                {c.name}
-              </button>
+              <Fragment key={c.slug}>
+                <button className={category === c.slug ? "on" : ""} onClick={() => pickCategory(c.slug)}>
+                  {c.name}
+                </button>
+                {openTop && openTop.slug === c.slug &&
+                  c.subs.map((s) => (
+                    <button
+                      key={s.slug}
+                      className={category === s.slug ? "on sub" : "sub"}
+                      onClick={() => pickCategory(s.slug)}
+                    >
+                      {s.name}
+                    </button>
+                  ))}
+              </Fragment>
             ))}
           </div>
         </aside>
@@ -164,7 +142,9 @@ export default function Shop() {
             <span>{list.length} products</span>
           </div>
 
-          {list.length === 0 ? (
+          {loading && PRODUCTS.length === 0 ? (
+            <p className="sh-empty">Loading…</p>
+          ) : list.length === 0 ? (
             <p className="sh-empty">No products found.</p>
           ) : (
             <div className="sh-grid">

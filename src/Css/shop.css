@@ -161,3 +161,6 @@ html[data-theme="light"] .shop {
   .sh-card h3 { font-size: 0.95rem; }
   .sh-card b { font-size: 1rem; }
 }
+
+.sh-side .sh-group button.sub { padding-left: 26px; font-size: 0.92em; opacity: 0.9; }
+.sh-side .sh-group button.sub::before { content: "– "; }

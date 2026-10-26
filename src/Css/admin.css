@@ -741,3 +741,24 @@ html[data-theme="light"] .bnr-text small { color: #8a6700; }
 @media (max-width: 700px) {
   .st-grid { grid-template-columns: 1fr; gap: 16px; }
 }
+
+/* sub-categories inside a category card */
+.cg-subs { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px; }
+.cg-sub {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px 4px 12px;
+  border: 1px solid rgba(128, 128, 140, 0.45);
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.cg-sub small { opacity: 0.6; margin-left: 4px; }
+.cg-sub.add { padding: 6px 12px; border-style: dashed; }
+.cg-sub-name, .cg-sub-x { background: none; border: 0; padding: 0; color: inherit; font: inherit; cursor: pointer; }
+.cg-sub-x { width: 22px; height: 22px; border-radius: 50%; opacity: 0.6; }
+.cg-sub-x:hover { opacity: 1; background: rgba(128, 128, 140, 0.25); }

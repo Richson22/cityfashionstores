@@ -18,6 +18,7 @@ import AdminCategories from './Admin/Categories.jsx'
 import Orders from './Admin/Orders.jsx'
 import Banners from './Admin/Banners.jsx'
 import Settings from './Admin/Settings.jsx'
+import About from "./Pages/About.jsx";
 
 function App() {
   return (
@@ -32,6 +33,8 @@ function App() {
         <Route path="/track" element={<Track />} />
         <Route path="/returns" element={<Returns />} />
         <Route path="/order-success/:no" element={<OrderSuccess />} />
+        <Route path="/returns" element={<Returns />} />
+        <Route path="/about" element={<About />} />
 
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route
@@ -49,6 +52,7 @@ function App() {
           <Route path="banners" element={<Banners />} />
           <Route path="settings" element={<Settings />} />
           <Route path="*" element={<Soon />} />
+        
         </Route>
       </Routes>
     </BrowserRouter>

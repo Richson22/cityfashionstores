@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { loadBanners } from "./bannersStore.js";
 import { api } from "../data/api.js";
-import { shrink } from "./image.js";
+import { uploadPhoto } from "./upload.js";
 
 function Pic({ src, className }) {
   const [bad, setBad] = useState(false);
@@ -67,8 +67,10 @@ function BannerForm({ initial, categories, onSave, onClose }) {
     if (!file) return;
     setBusy(true);
     try {
-      set("image", await shrink(file, 1200));
-    } catch {}
+      set("image", await uploadPhoto(file, 1600));
+    } catch (err) {
+      alert(err.message || "Photo upload failed");
+    }
     setBusy(false);
   };
 

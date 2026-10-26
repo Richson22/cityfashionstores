@@ -2,12 +2,14 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import "../Css/Navbar.css";
 import { useCartCount } from "../data/cart.js";
-import { getSettings } from "../Admin/settingsStore.js";
+import { useSettings } from "../data/settings.js";
+import { useCatalog } from "../data/catalog.js";
 import BottomNav from "./BottomNav.jsx";
 
 export default function Navbar() {
   const cartCount = useCartCount();
-  const st = getSettings();
+   const st = useSettings();
+  const { categories: cats } = useCatalog();
   const [query, setQuery] = useState("");
   const [logoMissing, setLogoMissing] = useState(false);
   const [nameMissing, setNameMissing] = useState(false);
@@ -34,12 +36,10 @@ export default function Navbar() {
   const moreRef = useRef(null);
   const [menuOpen, setMenuOpen] = useState(false); // phone side menu
   const [searchOpen, setSearchOpen] = useState(false); // phone search box
-  const moreLinks = [
-    { label: "T-shirts", slug: "tees" },
-    { label: "Jeans", slug: "jeans" },
-    { label: "Sneakers", slug: "sneakers" },
-    { label: "Polos", slug: "polos" },
-  ];
+    const moreLinks = cats.flatMap((c) => [
+    { label: c.name, slug: c.slug, sub: false },
+    ...c.subs.map((s) => ({ label: s.name, slug: s.slug, sub: true })),
+  ]);
 
   useEffect(() => {
     const close = (e) => {
@@ -134,7 +134,7 @@ export default function Navbar() {
                 <Link
                   key={l.slug}
                   to={`/shop?category=${l.slug}`}
-                  className={pathname === "/shop" && currentCat === l.slug ? "active" : ""}
+                  className={`${pathname === "/shop" && currentCat === l.slug ? "active" : ""}${l.sub ? " sub" : ""}`}
                   onClick={() => setMoreOpen(false)}
                 >
                   {l.label}
@@ -193,7 +193,7 @@ export default function Navbar() {
             <Link
               key={l.slug}
               to={`/shop?category=${l.slug}`}
-              className={pathname === "/shop" && currentCat === l.slug ? "active" : ""}
+              className={`${pathname === "/shop" && currentCat === l.slug ? "active" : ""}${l.sub ? " sub" : ""}`}
               onClick={() => setMenuOpen(false)}
             >
               {l.label}
