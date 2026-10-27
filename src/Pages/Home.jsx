@@ -211,7 +211,18 @@ export default function Home() {
         </div>
       </section>
     </div>
-    <footer className="foot">
+          <section className="trust">
+        <a href="/cac.png" target="_blank" rel="noreferrer" className="trust-img" aria-label="View our CAC certificate">
+          <img src="/cac.png" alt="CAC registration certificate" loading="lazy" />
+        </a>
+        <div className="trust-text">
+          <h3>Registered with the Corporate Affairs Commission (CAC)</h3>
+          <p>City Fashion Stores is a registered business.</p>
+          <a href="/cac.png" target="_blank" rel="noreferrer">View certificate →</a>
+        </div>
+      </section>
+
+      <footer className="foot">
       <div className="foot-top">
         <div className="foot-brand">
           <Link to="/" className="foot-logo">
