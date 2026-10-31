@@ -74,4 +74,27 @@ html[data-theme="light"] .ab-list li::before { color: #b38600; }
   .ab-tag { font-size: 1.05rem; }
 }
 
+.ab-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  padding-bottom: 8px;
+}
+.ab-tab {
+  padding: 10px 18px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--chip);
+  color: var(--mute);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.ab-tab:hover { color: var(--fg); }
+.ab-tab.active { background: #ffd60a; border-color: #ffd60a; color: #111; }
+@media (max-width: 700px) {
+  .ab-tabs { justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto; }
+}
+
 
