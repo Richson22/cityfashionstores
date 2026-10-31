@@ -20,6 +20,7 @@ import Banners from './Admin/Banners.jsx'
 import Settings from './Admin/Settings.jsx'
 import About from "./Pages/About.jsx";
 import Policy from "./Pages/Policy.jsx";
+import PayComplete from "./Pages/PayComplete.jsx";
 
 function App() {
   return (
@@ -39,6 +40,7 @@ function App() {
         <Route path="/terms" element={<Policy kind="terms" />} />
         <Route path="/privacy" element={<Policy kind="privacy" />} />
         <Route path="/shipping" element={<Policy kind="shipping" />} />
+        <Route path="/pay-complete/:no" element={<PayComplete />} />
 
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route

@@ -35,7 +35,7 @@ export default function Overview() {
   if (error) return <>{head}<p className="al-error">{error}</p></>;
   if (!data) return <>{head}<p>Loading…</p></>;
 
-  const { sales, status, recent, low } = data;
+  const { sales = [], status = [], recent = [], low = [] } = data;
   const max = Math.max(1, ...sales.map((s) => s.v));
   const week = sales.reduce((n, s) => n + s.v, 0);
   const totalOrders = status.reduce((n, s) => n + s.n, 0);
@@ -127,13 +127,13 @@ export default function Overview() {
                   </tr>
                 </thead>
                 <tbody>
-                  {recent.map((o) => (
-                    <tr key={o.no}>
+                  {recent.map((o, i) => (
+                    <tr key={o.no ?? i}>
                       <td><b>#{o.no}</b></td>
                       <td>{o.who}</td>
                       <td>{o.items}</td>
                       <td>{money(o.total)}</td>
-                      <td><span className={`ad-badge ${o.status.toLowerCase()}`}>{o.status}</span></td>
+                      <td><span className={`ad-badge ${String(o.status || "unknown").toLowerCase()}`}>{o.status || "Unknown"}</span></td>
                       <td className="mute">{when(o.createdAt)}</td>
                     </tr>
                   ))}

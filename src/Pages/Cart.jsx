@@ -151,8 +151,27 @@ export default function Cart() {
       }
       setBusy(false);
     } else {
-      // Paystack will be connected here later.
-      alert("Online payment with Paystack will be connected soon. Please order on WhatsApp for now.");
+      if (busy) return;
+      setBusy(true);
+      try {
+        const order = await api("/orders", {
+          method: "POST",
+          body: {
+            items: cart.map((i) => ({ id: i.id, qty: i.qty, size: i.size || "", color: i.color || "" })),
+            customer: form,
+            method: "Paystack",
+          },
+        });
+        const pay = await api("/paystack/init", {
+          method: "POST",
+          body: { no: order.no, phone: form.phone },
+        });
+        window.location.href = pay.url; // go to Paystack's secure page
+        return;
+      } catch (e) {
+        alert(e.message === "Failed to fetch" ? "Cannot reach the server. Please try again." : e.message);
+      }
+      setBusy(false);
     }
   };
   
@@ -245,7 +264,7 @@ export default function Cart() {
               </button>
 
               <ul className="ca-notes">
-                <li>{getSettings().deliveryNote}</li>
+                <li>{settings.deliveryNote}</li>
                 <li>Secure checkout with Paystack</li>
                 <li>Returns &amp; exchanges — <Link to="/returns">see policy</Link></li>
               </ul>
