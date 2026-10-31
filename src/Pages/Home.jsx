@@ -50,14 +50,14 @@ function ProductCard({ p }) {
       </div>
       <h3>{p.name}</h3>
       <b className="prod-price">₦{p.price.toLocaleString()}</b>
-      {p.colors && p.colors.length > 1 && (
+      {p.colors && p.colors.length > 0 && (
         <div className="prod-colors">
           <span className="prod-dots">
             {p.colors.map((c) => (
               <i key={c} style={{ background: c }} />
             ))}
           </span>
-          {p.colors.length} colors
+          {p.colors.length} {p.colors.length === 1 ? "color" : "colors"}
         </div>
       )}
     </Link>
